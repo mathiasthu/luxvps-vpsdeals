@@ -1,5 +1,5 @@
 import * as cheerio from 'cheerio';
-import { Deal, DealCategory, slugify, assignBadges, FALLBACK_DEALS } from './deals';
+import { Deal, DealCategory, slugify, assignBadges } from './deals';
 
 const SOURCES: { url: string; category: DealCategory }[] = [
   {
@@ -246,8 +246,7 @@ export async function getAllDeals(): Promise<Deal[]> {
   const merged = results.flat();
 
   if (merged.length === 0) {
-    console.warn('[scraper] No deals scraped, using fallback data');
-    return assignBadges(FALLBACK_DEALS);
+    return [];
   }
 
   return assignBadges(merged);

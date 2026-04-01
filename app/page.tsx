@@ -10,6 +10,19 @@ export const metadata: Metadata = buildHomeMetadata();
 
 export default async function HomePage() {
   const deals = await getAllDeals();
+
+  if (deals.length === 0) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-20 text-center">
+        <div className="text-5xl mb-4">⚠️</div>
+        <h1 className="text-2xl font-bold text-white mb-3">Deals unavailable right now</h1>
+        <p className="text-brand-muted">
+          Could not fetch deals from billing.luxvps.net. The scraper needs attention.
+        </p>
+      </div>
+    );
+  }
+
   const specialDeals = deals.filter((d) => d.category === 'special-offer');
 
   return (
