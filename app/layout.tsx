@@ -115,7 +115,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                       billing.luxvps.net
                     </a>
                   </p>
-                  <p>Vibe coded with Claude ⚡</p>
+                  <p>Vibe coded ⚡ &amp; made with ❤️</p>
                 </div>
               </div>
             </div>
