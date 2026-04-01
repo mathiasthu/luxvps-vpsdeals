@@ -1,0 +1,259 @@
+import * as cheerio from 'cheerio';
+import { Deal, DealCategory, slugify, assignBadges, FALLBACK_DEALS } from './deals';
+
+const SOURCES: { url: string; category: DealCategory }[] = [
+  {
+    url: 'https://billing.luxvps.net/index.php?rp=/store/special-offer',
+    category: 'special-offer',
+  },
+  {
+    url: 'https://billing.luxvps.net/index.php?rp=/store/kvm-rootservers',
+    category: 'kvm-rootserver',
+  },
+  {
+    url: 'https://billing.luxvps.net/index.php?rp=/store/ryzen-kvmservers',
+    category: 'ryzen-kvm',
+  },
+];
+
+const FETCH_HEADERS = {
+  'User-Agent':
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  'Accept-Language': 'en-US,en;q=0.9',
+};
+
+function parseRam(text: string): string | null {
+  const m = text.match(/(\d+(?:\.\d+)?)\s*(GB|MB)\s*(?:RAM|Memory|VRAM)?/i);
+  return m ? `${m[1]} ${m[2].toUpperCase()}` : null;
+}
+
+function parseCpu(text: string): string | null {
+  const m = text.match(/(\d+)\s*(?:x\s*)?(?:vCore|Core|CPU|vCPU)/i);
+  return m ? `${m[1]} vCores` : null;
+}
+
+function parseDisk(text: string): string | null {
+  const m = text.match(/(\d+(?:\.\d+)?)\s*(GB|TB)\s*(?:NVMe|SSD|HDD|Disk|Storage)?/i);
+  return m ? `${m[1]} ${m[2].toUpperCase()} ${text.match(/NVMe/i) ? 'NVMe' : text.match(/SSD/i) ? 'SSD' : 'HDD'}` : null;
+}
+
+function parseBandwidth(text: string): string | null {
+  if (/unmetered|unlimited/i.test(text)) return 'Unmetered';
+  const m = text.match(/(\d+(?:\.\d+)?)\s*(GB|TB)\s*(?:Bandwidth|Traffic|BW)?/i);
+  return m ? `${m[1]} ${m[2].toUpperCase()}` : null;
+}
+
+function parsePrice(text: string): number | null {
+  const cleaned = text.replace(/[^\d.,]/g, '').replace(',', '.');
+  const price = parseFloat(cleaned);
+  return isNaN(price) ? null : price;
+}
+
+function parseLocation(text: string): string | null {
+  const m = text.match(/(?:Location|Datacenter|DC):\s*(.+)/i);
+  if (m) return m[1].trim();
+  const cities = ['Germany', 'Frankfurt', 'Amsterdam', 'Netherlands', 'France', 'Paris', 'USA', 'US', 'UK', 'London'];
+  for (const city of cities) {
+    if (text.includes(city)) return city;
+  }
+  return null;
+}
+
+function extractSpecsFromFeatures(features: string[]): {
+  ram?: string;
+  cpu?: string;
+  disk?: string;
+  bandwidth?: string;
+  location?: string;
+} {
+  const specs: { ram?: string; cpu?: string; disk?: string; bandwidth?: string; location?: string } = {};
+
+  for (const feat of features) {
+    const t = feat.trim();
+    if (!specs.ram) {
+      const ram = parseRam(t);
+      if (ram) specs.ram = ram;
+    }
+    if (!specs.cpu) {
+      const cpu = parseCpu(t);
+      if (cpu) specs.cpu = cpu;
+    }
+    if (!specs.disk) {
+      const disk = parseDisk(t);
+      if (disk) specs.disk = disk;
+    }
+    if (!specs.bandwidth) {
+      const bw = parseBandwidth(t);
+      if (bw) specs.bandwidth = bw;
+    }
+    if (!specs.location) {
+      const loc = parseLocation(t);
+      if (loc) specs.location = loc;
+    }
+  }
+
+  return specs;
+}
+
+function scrapeProducts(html: string, category: DealCategory, sourcePageUrl: string): Deal[] {
+  const $ = cheerio.load(html);
+  const deals: Deal[] = [];
+  const fetchedAt = new Date().toISOString();
+
+  // Try multiple WHMCS selectors in priority order
+  const selectors = [
+    '.product-list-item',
+    '.package',
+    '[data-product-id]',
+    '.pricing-table .col',
+    '.product-card',
+    '.plan',
+  ];
+
+  let productElements = $();
+  for (const sel of selectors) {
+    const found = $(sel);
+    if (found.length > 0) {
+      productElements = found;
+      break;
+    }
+  }
+
+  // If no structured elements, try table rows
+  if (productElements.length === 0) {
+    productElements = $('table tr').filter((_, el) => {
+      return $(el).find('a[href*="order"], a[href*="cart"]').length > 0;
+    });
+  }
+
+  productElements.each((_, el) => {
+    const $el = $(el);
+
+    // Extract name
+    const name =
+      $el.find('.product-name, .package-name, h2, h3, .plan-name, .title').first().text().trim() ||
+      $el.find('strong').first().text().trim();
+
+    if (!name) return;
+
+    // Extract price
+    const priceText =
+      $el.find('.price, .price-tag, .billing-cycle-price, .amount, .cost').first().text().trim() ||
+      $el.find('[class*="price"]').first().text().trim();
+    const price = parsePrice(priceText);
+
+    // Extract order URL
+    const orderHref =
+      $el.find('a[href*="order"], a[href*="cart"], a.order-button, a.btn-order, .btn-primary').first().attr('href') ||
+      $el.find('a').filter((_, a) => {
+        const text = $(a).text().toLowerCase();
+        return text.includes('order') || text.includes('buy') || text.includes('get');
+      }).first().attr('href');
+
+    const sourceUrl = orderHref
+      ? orderHref.startsWith('http')
+        ? orderHref
+        : `https://billing.luxvps.net${orderHref}`
+      : sourcePageUrl;
+
+    // Extract features list
+    const features: string[] = [];
+    $el.find('ul li, .features li, .feature-list li, .product-features li').each((_, li) => {
+      const text = $(li).text().trim();
+      if (text) features.push(text);
+    });
+
+    // Also check for definition lists and table cells
+    $el.find('dt, dd, td').each((_, cell) => {
+      const text = $(cell).text().trim();
+      if (text && text.length < 100) features.push(text);
+    });
+
+    // Parse specs from all text content if features list is empty
+    if (features.length === 0) {
+      const allText = $el.text();
+      const lines = allText.split(/\n|\//).map((l) => l.trim()).filter(Boolean);
+      features.push(...lines);
+    }
+
+    const parsedSpecs = extractSpecsFromFeatures(features);
+
+    // Check stock availability
+    const outOfStockEl = $el.find('.out-of-stock, [class*="unavailable"], [class*="sold-out"]');
+    const orderBtn = $el.find('a[href*="order"], a[href*="cart"], a.order-button, button.order');
+    const inStock =
+      outOfStockEl.length === 0 &&
+      !(orderBtn.attr('disabled') !== undefined) &&
+      !$el.text().toLowerCase().includes('out of stock') &&
+      !$el.text().toLowerCase().includes('sold out');
+
+    // Extract description
+    const description = $el.find('.description, .product-description, p').first().text().trim() || undefined;
+
+    const id = slugify(`${name}-${category}`);
+
+    deals.push({
+      id,
+      slug: id,
+      name,
+      category,
+      sourceUrl,
+      price: price ?? 0,
+      specs: {
+        ram: parsedSpecs.ram ?? 'N/A',
+        cpu: parsedSpecs.cpu ?? 'N/A',
+        disk: parsedSpecs.disk ?? 'N/A',
+        bandwidth: parsedSpecs.bandwidth ?? 'N/A',
+        location: parsedSpecs.location,
+      },
+      inStock,
+      description,
+      fetchedAt,
+    });
+  });
+
+  return deals;
+}
+
+async function fetchSource(url: string, category: DealCategory): Promise<Deal[]> {
+  try {
+    const res = await fetch(url, {
+      headers: FETCH_HEADERS,
+      next: { revalidate: 86400 },
+    });
+
+    if (!res.ok) {
+      console.error(`[scraper] Failed to fetch ${url}: ${res.status}`);
+      return [];
+    }
+
+    const html = await res.text();
+    const deals = scrapeProducts(html, category, url);
+    console.log(`[scraper] ${url}: found ${deals.length} deals`);
+    return deals;
+  } catch (err) {
+    console.error(`[scraper] Error fetching ${url}:`, err);
+    return [];
+  }
+}
+
+export async function getAllDeals(): Promise<Deal[]> {
+  const results = await Promise.all(
+    SOURCES.map(({ url, category }) => fetchSource(url, category))
+  );
+
+  const merged = results.flat();
+
+  if (merged.length === 0) {
+    console.warn('[scraper] No deals scraped, using fallback data');
+    return assignBadges(FALLBACK_DEALS);
+  }
+
+  return assignBadges(merged);
+}
+
+export async function getDealBySlug(slug: string): Promise<Deal | null> {
+  const deals = await getAllDeals();
+  return deals.find((d) => d.slug === slug) ?? null;
+}
