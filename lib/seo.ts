@@ -196,3 +196,86 @@ export function buildWebsiteSchema() {
     },
   };
 }
+
+export function buildOrganizationSchema() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'LuxVPS',
+    url: 'https://luxvps.net',
+    logo: 'https://billing.luxvps.net/assets/img/logo.png',
+    sameAs: [
+      'https://luxvps.net',
+      'https://billing.luxvps.net',
+      SITE_URL,
+    ],
+  };
+}
+
+export function buildFaqSchema(deal: Deal) {
+  const location = deal.specs.location ? `in ${deal.specs.location}` : 'in our datacenters';
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: `What specs does the ${deal.name} include?`,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: `The ${deal.name} includes ${deal.specs.ram} RAM, ${deal.specs.cpu}, ${deal.specs.disk} storage, and ${deal.specs.bandwidth} bandwidth${deal.specs.location ? `, hosted in ${deal.specs.location}` : ''}.`,
+        },
+      },
+      {
+        '@type': 'Question',
+        name: `Is the ${deal.name} currently in stock?`,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: deal.inStock
+            ? `Yes, the ${deal.name} is currently in stock and available to order immediately at €${deal.price.toFixed(2)}/month.`
+            : `The ${deal.name} is currently out of stock. Check back soon or browse other LuxVPS deals.`,
+        },
+      },
+      {
+        '@type': 'Question',
+        name: `Where is the ${deal.name} hosted?`,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: `The ${deal.name} is hosted ${location} with KVM virtualization, giving you full root access.`,
+        },
+      },
+      {
+        '@type': 'Question',
+        name: `Can I order the ${deal.name} on a monthly basis?`,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: `Yes, the ${deal.name} is available for €${deal.price.toFixed(2)}/month. Click Order Now to configure and purchase directly on LuxVPS.`,
+        },
+      },
+    ],
+  };
+}
+
+export function buildCategoryMetadata(category: string, label: string, description: string) {
+  const url = `${SITE_URL}/category/${category}`;
+  const title = `${label} — LuxVPS Deal Finder`;
+  return {
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: 'website' as const,
+      url,
+      title,
+      description,
+      siteName: SITE_NAME,
+      images: [{ url: `${SITE_URL}/og-image.png`, width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: 'summary_large_image' as const,
+      title,
+      description,
+      images: [`${SITE_URL}/og-image.png`],
+    },
+  };
+}

@@ -1,8 +1,8 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getAllDeals, getDealBySlug } from '@/lib/scraper';
-import { buildDealMetadata, buildProductSchema, buildBreadcrumbSchema } from '@/lib/seo';
-import { CATEGORY_LABELS, BADGE_LABELS, BADGE_COLORS } from '@/lib/deals';
+import { buildDealMetadata, buildProductSchema, buildBreadcrumbSchema, buildFaqSchema } from '@/lib/seo';
+import { CATEGORY_LABELS, BADGE_LABELS, BADGE_COLORS, Deal } from '@/lib/deals';
 import type { Metadata } from 'next';
 
 export const revalidate = 86400;
@@ -20,7 +20,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params;
   const deal = await getDealBySlug(slug);
   if (!deal) return {};
-  return buildDealMetadata(deal);
+  // Remove og:image override — Next.js picks up opengraph-image.tsx automatically
+  const meta = buildDealMetadata(deal);
+  if (meta.openGraph && typeof meta.openGraph === 'object') {
+    const og = { ...meta.openGraph };
+    delete (og as Record<string, unknown>).images;
+    meta.openGraph = og;
+  }
+  if (meta.twitter && typeof meta.twitter === 'object') {
+    const tw = { ...meta.twitter };
+    delete (tw as Record<string, unknown>).images;
+    meta.twitter = tw;
+  }
+  return meta;
 }
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://deals.luxvps.net';
@@ -68,36 +80,61 @@ const SPEC_ITEMS = [
   },
 ];
 
+function RelatedDeals({ deals, currentSlug }: { deals: Deal[]; currentSlug: string }) {
+  if (deals.length === 0) return null;
+  return (
+    <div className="mt-12">
+      <h2 className="text-white font-bold text-lg mb-4">More Deals in This Category</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {deals.map((d) => (
+          <Link
+            key={d.id}
+            href={`/deals/${d.slug}`}
+            className="bg-brand-card border border-brand-border hover:border-brand-border-light rounded-xl p-4 transition-colors group"
+          >
+            <div className="text-brand-text font-semibold text-sm group-hover:text-brand-red transition-colors mb-1">
+              {d.name}
+            </div>
+            <div className="text-white font-bold text-lg">€{d.price.toFixed(2)}<span className="text-brand-muted text-xs font-normal">/mo</span></div>
+            <div className="text-brand-muted text-xs mt-1">{d.specs.ram} · {d.specs.cpu}</div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default async function DealPage({ params }: PageProps) {
   const { slug } = await params;
-  const deal = await getDealBySlug(slug);
+  const [deal, allDeals] = await Promise.all([getDealBySlug(slug), getAllDeals()]);
   if (!deal) notFound();
+
+  const relatedDeals = allDeals
+    .filter((d) => d.category === deal.category && d.slug !== slug)
+    .slice(0, 3);
 
   const breadcrumbSchema = buildBreadcrumbSchema([
     { name: 'Home', url: SITE_URL },
-    { name: 'Deals', url: `${SITE_URL}/#deals` },
+    { name: CATEGORY_LABELS[deal.category], url: `${SITE_URL}/category/${deal.category}` },
     { name: deal.name, url: `${SITE_URL}/deals/${deal.slug}` },
   ]);
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(buildProductSchema(deal)) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(buildProductSchema(deal)) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(buildFaqSchema(deal)) }} />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-sm text-brand-muted mb-6" aria-label="Breadcrumb">
+        <nav className="flex items-center gap-2 text-sm text-brand-muted mb-6 flex-wrap" aria-label="Breadcrumb">
           <Link href="/" className="hover:text-brand-text transition-colors">Home</Link>
           <svg className="w-3 h-3 text-brand-border" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
-          <Link href="/#deals" className="hover:text-brand-text transition-colors">Deals</Link>
+          <Link href={`/category/${deal.category}`} className="hover:text-brand-text transition-colors">
+            {CATEGORY_LABELS[deal.category]}
+          </Link>
           <svg className="w-3 h-3 text-brand-border" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
@@ -132,9 +169,7 @@ export default async function DealPage({ params }: PageProps) {
             {/* Specs table */}
             <div className="bg-brand-card border border-brand-border rounded-xl overflow-hidden">
               <div className="px-5 py-3 border-b border-brand-border">
-                <h2 className="text-brand-text font-semibold text-sm uppercase tracking-wide">
-                  Full Specifications
-                </h2>
+                <h2 className="text-brand-text font-semibold text-sm uppercase tracking-wide">Full Specifications</h2>
               </div>
               <div className="divide-y divide-brand-border/50">
                 {SPEC_ITEMS.map(({ icon, color, label, key }) => (
@@ -187,14 +222,10 @@ export default async function DealPage({ params }: PageProps) {
           <div className="md:col-span-1">
             <div className="sticky top-20 bg-brand-card border-2 border-brand-red/50 rounded-xl p-6 shadow-lg shadow-brand-red/10">
               <div className="text-center mb-4">
-                <div className="text-4xl font-extrabold text-white">
-                  €{deal.price.toFixed(2)}
-                </div>
+                <div className="text-4xl font-extrabold text-white">€{deal.price.toFixed(2)}</div>
                 <div className="text-brand-muted text-sm mt-0.5">per month</div>
                 {deal.priceAnnual && (
-                  <div className="text-brand-green text-xs mt-1">
-                    Annual: €{deal.priceAnnual.toFixed(2)}/yr
-                  </div>
+                  <div className="text-brand-green text-xs mt-1">Annual: €{deal.priceAnnual.toFixed(2)}/yr</div>
                 )}
               </div>
 
@@ -232,7 +263,6 @@ export default async function DealPage({ params }: PageProps) {
               </p>
             </div>
 
-            {/* Back link */}
             <div className="mt-4 text-center">
               <Link href="/#deals" className="text-brand-muted hover:text-brand-text text-sm transition-colors inline-flex items-center gap-1">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -243,6 +273,9 @@ export default async function DealPage({ params }: PageProps) {
             </div>
           </div>
         </div>
+
+        {/* Related deals */}
+        <RelatedDeals deals={relatedDeals} currentSlug={slug} />
       </div>
     </>
   );

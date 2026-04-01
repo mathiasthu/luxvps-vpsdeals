@@ -15,6 +15,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
+  const categoryEntries: MetadataRoute.Sitemap = [
+    'special-offer',
+    'ryzen-kvm',
+    'kvm-rootserver',
+  ].map((cat) => ({
+    url: `${SITE_URL}/category/${cat}`,
+    lastModified: new Date(),
+    changeFrequency: 'daily' as const,
+    priority: 0.7,
+  }));
+
   return [
     {
       url: SITE_URL,
@@ -22,6 +33,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: 'daily',
       priority: 1.0,
     },
+    ...categoryEntries,
     ...dealEntries,
   ];
 }

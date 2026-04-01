@@ -1,4 +1,8 @@
-export const SUPPORTED_CURRENCIES = ['EUR', 'USD', 'GBP', 'CHF', 'PLN', 'SEK'] as const;
+export const SUPPORTED_CURRENCIES = [
+  'EUR', 'USD', 'GBP', 'CHF', 'PLN', 'SEK',
+  'NOK', 'DKK', 'CAD', 'AUD', 'JPY', 'INR',
+  'SGD', 'NZD', 'HUF', 'CZK', 'BRL', 'TRY', 'AED',
+] as const;
 export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number];
 
 export const CURRENCY_SYMBOLS: Record<SupportedCurrency, string> = {
@@ -8,6 +12,19 @@ export const CURRENCY_SYMBOLS: Record<SupportedCurrency, string> = {
   CHF: 'Fr',
   PLN: 'zł',
   SEK: 'kr',
+  NOK: 'kr',
+  DKK: 'kr',
+  CAD: 'CA$',
+  AUD: 'A$',
+  JPY: '¥',
+  INR: '₹',
+  SGD: 'S$',
+  NZD: 'NZ$',
+  HUF: 'Ft',
+  CZK: 'Kč',
+  BRL: 'R$',
+  TRY: '₺',
+  AED: 'د.إ',
 };
 
 export type ExchangeRates = Record<string, number>;
@@ -23,6 +40,19 @@ const FALLBACK_RATES: ExchangeRates = {
   chf: 0.97,
   pln: 4.28,
   sek: 11.2,
+  nok: 11.6,
+  dkk: 7.46,
+  cad: 1.47,
+  aud: 1.65,
+  jpy: 162,
+  inr: 89.5,
+  sgd: 1.45,
+  nzd: 1.78,
+  huf: 395,
+  czk: 25.1,
+  brl: 5.5,
+  try: 35.2,
+  aed: 3.97,
 };
 
 export async function fetchExchangeRates(): Promise<ExchangeRates> {

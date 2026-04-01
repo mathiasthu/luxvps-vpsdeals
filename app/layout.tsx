@@ -3,7 +3,7 @@ import './globals.css';
 import { CurrencyProvider } from '@/context/CurrencyContext';
 import CurrencySelector from '@/components/CurrencySelector';
 import Link from 'next/link';
-import { buildHomeMetadata } from '@/lib/seo';
+import { buildHomeMetadata, buildOrganizationSchema } from '@/lib/seo';
 
 export const metadata: Metadata = {
   ...buildHomeMetadata(),
@@ -16,8 +16,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <link rel="alternate icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" href="/favicon.svg" />
+        <link rel="preconnect" href="https://billing.luxvps.net" />
+        <meta name="theme-color" content="#E63946" />
       </head>
       <body className="min-h-screen flex flex-col bg-brand-dark text-brand-text antialiased">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(buildOrganizationSchema()) }}
+        />
         <CurrencyProvider>
           {/* Navigation */}
           <header className="border-b border-brand-border bg-brand-dark/95 backdrop-blur-md sticky top-0 z-50">
@@ -37,13 +44,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <Link href="/#deals" className="hover:text-brand-text transition-colors">
                   All Deals
                 </Link>
-                <Link href="/?category=special-offer" className="hover:text-brand-text transition-colors">
+                <Link href="/category/special-offer" className="hover:text-brand-text transition-colors">
                   Special Offers
                 </Link>
-                <Link href="/?category=ryzen-kvm" className="hover:text-brand-text transition-colors">
+                <Link href="/category/ryzen-kvm" className="hover:text-brand-text transition-colors">
                   Ryzen KVM
                 </Link>
-                <Link href="/?category=kvm-rootserver" className="hover:text-brand-text transition-colors">
+                <Link href="/category/kvm-rootserver" className="hover:text-brand-text transition-colors">
                   Root Servers
                 </Link>
               </nav>
@@ -76,9 +83,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <div>
                     <div className="text-brand-text font-semibold mb-2">Deals</div>
                     <ul className="space-y-1.5">
-                      <li><Link href="/?category=special-offer" className="hover:text-brand-text transition-colors">Special Offers</Link></li>
-                      <li><Link href="/?category=ryzen-kvm" className="hover:text-brand-text transition-colors">Ryzen KVM VPS</Link></li>
-                      <li><Link href="/?category=kvm-rootserver" className="hover:text-brand-text transition-colors">KVM Root Servers</Link></li>
+                      <li><Link href="/category/special-offer" className="hover:text-brand-text transition-colors">Special Offers</Link></li>
+                      <li><Link href="/category/ryzen-kvm" className="hover:text-brand-text transition-colors">Ryzen KVM VPS</Link></li>
+                      <li><Link href="/category/kvm-rootserver" className="hover:text-brand-text transition-colors">KVM Root Servers</Link></li>
                     </ul>
                   </div>
                   <div>
@@ -101,12 +108,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
               <div className="border-t border-brand-border mt-8 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-brand-muted">
                 <p>© {new Date().getFullYear()} LuxVPS Deal Finder. Prices in EUR, updated every 24 hours.</p>
-                <p>
-                  All deals link directly to{' '}
-                  <a href="https://billing.luxvps.net" target="_blank" rel="noopener noreferrer" className="hover:text-brand-text">
-                    billing.luxvps.net
-                  </a>
-                </p>
+                <div className="flex items-center gap-4">
+                  <p>
+                    All deals link directly to{' '}
+                    <a href="https://billing.luxvps.net" target="_blank" rel="noopener noreferrer" className="hover:text-brand-text">
+                      billing.luxvps.net
+                    </a>
+                  </p>
+                  <p>Vibe coded with Claude ⚡</p>
+                </div>
               </div>
             </div>
           </footer>
