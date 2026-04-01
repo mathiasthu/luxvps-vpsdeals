@@ -19,12 +19,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" href="/favicon.svg" />
         <link rel="preconnect" href="https://billing.luxvps.net" />
         <meta name="theme-color" content="#E63946" />
-      </head>
-      <body className="min-h-screen flex flex-col bg-brand-dark text-brand-text antialiased">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(buildOrganizationSchema()) }}
         />
+      </head>
+      <body className="min-h-screen flex flex-col bg-brand-dark text-brand-text antialiased">
         <CurrencyProvider>
           {/* Navigation */}
           <header className="border-b border-brand-border bg-brand-dark/95 backdrop-blur-md sticky top-0 z-50">
