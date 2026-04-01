@@ -101,8 +101,10 @@ function scrapeProducts(html: string, category: DealCategory, sourcePageUrl: str
   const deals: Deal[] = [];
   const fetchedAt = new Date().toISOString();
 
-  // Try multiple WHMCS selectors in priority order
+  // LuxVPS WHMCS uses div.product.clearfix — try that first, then generic fallbacks
   const selectors = [
+    'div.product.clearfix',
+    'div.product',
     '.product-list-item',
     '.package',
     '[data-product-id]',
@@ -120,7 +122,7 @@ function scrapeProducts(html: string, category: DealCategory, sourcePageUrl: str
     }
   }
 
-  // If no structured elements, try table rows
+  // Fallback: table rows containing an order/cart link
   if (productElements.length === 0) {
     productElements = $('table tr').filter((_, el) => {
       return $(el).find('a[href*="order"], a[href*="cart"]').length > 0;
@@ -130,21 +132,26 @@ function scrapeProducts(html: string, category: DealCategory, sourcePageUrl: str
   productElements.each((_, el) => {
     const $el = $(el);
 
-    // Extract name
+    // Extract name — LuxVPS uses <span id="productXXX-name"> inside <header>
     const name =
+      $el.find('header span[id$="-name"]').first().text().trim() ||
+      $el.find('span[id$="-name"]').first().text().trim() ||
       $el.find('.product-name, .package-name, h2, h3, .plan-name, .title').first().text().trim() ||
       $el.find('strong').first().text().trim();
 
     if (!name) return;
 
-    // Extract price
+    // Extract price — LuxVPS uses <span class="price">€4.95 EUR</span>
     const priceText =
+      $el.find('span.price').first().text().trim() ||
       $el.find('.price, .price-tag, .billing-cycle-price, .amount, .cost').first().text().trim() ||
       $el.find('[class*="price"]').first().text().trim();
     const price = parsePrice(priceText);
 
-    // Extract order URL
+    // Extract order URL — LuxVPS uses <a class="btn btn-success btn-sm btn-order-now">
     const orderHref =
+      $el.find('a.btn-order-now').first().attr('href') ||
+      $el.find('a[id$="-order-button"]').first().attr('href') ||
       $el.find('a[href*="order"], a[href*="cart"], a.order-button, a.btn-order, .btn-primary').first().attr('href') ||
       $el.find('a').filter((_, a) => {
         const text = $(a).text().toLowerCase();
@@ -157,39 +164,47 @@ function scrapeProducts(html: string, category: DealCategory, sourcePageUrl: str
         : `https://billing.luxvps.net${orderHref}`
       : sourcePageUrl;
 
-    // Extract features list
+    // Extract features — LuxVPS puts specs in .product-desc p with <br> separators
     const features: string[] = [];
+
+    const descHtml = $el.find('.product-desc p').html() ?? '';
+    if (descHtml) {
+      const brLines = descHtml
+        .split(/<br\s*\/?>/gi)
+        .map((line) => cheerio.load(line).text().trim())
+        .filter(Boolean);
+      features.push(...brLines);
+    }
+
+    // Also collect <li> items and table cells as fallback
     $el.find('ul li, .features li, .feature-list li, .product-features li').each((_, li) => {
       const text = $(li).text().trim();
       if (text) features.push(text);
     });
-
-    // Also check for definition lists and table cells
     $el.find('dt, dd, td').each((_, cell) => {
       const text = $(cell).text().trim();
       if (text && text.length < 100) features.push(text);
     });
 
-    // Parse specs from all text content if features list is empty
+    // Last resort: split all text by newlines
     if (features.length === 0) {
-      const allText = $el.text();
-      const lines = allText.split(/\n|\//).map((l) => l.trim()).filter(Boolean);
+      const lines = $el.text().split(/\n|\//).map((l) => l.trim()).filter(Boolean);
       features.push(...lines);
     }
 
     const parsedSpecs = extractSpecsFromFeatures(features);
 
-    // Check stock availability
-    const outOfStockEl = $el.find('.out-of-stock, [class*="unavailable"], [class*="sold-out"]');
-    const orderBtn = $el.find('a[href*="order"], a[href*="cart"], a.order-button, button.order');
-    const inStock =
-      outOfStockEl.length === 0 &&
-      !(orderBtn.attr('disabled') !== undefined) &&
-      !$el.text().toLowerCase().includes('out of stock') &&
-      !$el.text().toLowerCase().includes('sold out');
+    // Stock — LuxVPS uses <span class="qty">15 Available</span> or "0 Available"
+    const qtyText = $el.find('span.qty').text().trim();
+    const qtyNum = parseInt(qtyText, 10);
+    const inStock = qtyText
+      ? qtyNum > 0
+      : !$el.find('.out-of-stock, [class*="unavailable"], [class*="sold-out"]').length &&
+        !$el.text().toLowerCase().includes('out of stock') &&
+        !$el.text().toLowerCase().includes('sold out');
 
-    // Extract description
-    const description = $el.find('.description, .product-description, p').first().text().trim() || undefined;
+    // Description — clean text from .product-desc p
+    const description = $el.find('.product-desc p').text().replace(/\s+/g, ' ').trim() || undefined;
 
     const id = slugify(`${name}-${category}`);
 
