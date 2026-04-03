@@ -43,15 +43,9 @@ function parseBandwidth(text: string): string | null {
   if (/unmetered|unlimited/i.test(text)) return 'Unmetered';
   if (/RAM|Memory|VRAM/i.test(text)) return null;
   if (/NVMe|SSD|HDD|Disk|Storage/i.test(text)) return null;
-  // TB is almost always bandwidth on VPS plans (not disk at this scale), match freely
-  const tbMatch = text.match(/(\d+(?:\.\d+)?)\s*TB(?!\s*\/)/i);
-  if (tbMatch) return `${tbMatch[1]} TB`;
-  // GB only if bandwidth/traffic keyword is explicit (avoids matching "1 GB/s" port speed)
-  if (/bandwidth|traffic/i.test(text)) {
-    const gbMatch = text.match(/(\d+(?:\.\d+)?)\s*GB/i);
-    if (gbMatch) return `${gbMatch[1]} GB`;
-  }
-  return null;
+  // Require GB/TB to be followed by a non-letter/non-slash (catches "Gbps", "GB/s" port speeds)
+  const m = text.match(/(\d+(?:\.\d+)?)\s*(GB|TB)(?=[^a-zA-Z\/]|$)/i);
+  return m ? `${m[1]} ${m[2].toUpperCase()}` : null;
 }
 
 function parsePrice(text: string): number | null {
