@@ -34,12 +34,15 @@ function parseCpu(text: string): string | null {
 }
 
 function parseDisk(text: string): string | null {
+  if (!/NVMe|SSD|HDD|Disk|Storage/i.test(text)) return null;
   const m = text.match(/(\d+(?:\.\d+)?)\s*(GB|TB)\s*(?:NVMe|SSD|HDD|Disk|Storage)?/i);
   return m ? `${m[1]} ${m[2].toUpperCase()} ${text.match(/NVMe/i) ? 'NVMe' : text.match(/SSD/i) ? 'SSD' : 'HDD'}` : null;
 }
 
 function parseBandwidth(text: string): string | null {
   if (/unmetered|unlimited/i.test(text)) return 'Unmetered';
+  if (/RAM|Memory|VRAM/i.test(text)) return null;
+  if (/NVMe|SSD|HDD|Disk|Storage/i.test(text)) return null;
   const m = text.match(/(\d+(?:\.\d+)?)\s*(GB|TB)\s*(?:Bandwidth|Traffic|BW)?/i);
   return m ? `${m[1]} ${m[2].toUpperCase()}` : null;
 }
