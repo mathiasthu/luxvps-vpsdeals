@@ -110,13 +110,17 @@ export function buildDealMetadata(deal: Deal): Metadata {
 }
 
 export function buildProductSchema(deal: Deal) {
+  const description =
+    deal.description ??
+    `${deal.name} — ${deal.specs.ram} RAM, ${deal.specs.cpu}, ${deal.specs.disk} storage, ${deal.specs.bandwidth} bandwidth. KVM VPS hosted by LuxVPS${deal.specs.location ? ` in ${deal.specs.location}` : ''}.`;
+
   return {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: deal.name,
-    description:
-      deal.description ??
-      `${deal.name} VPS — ${deal.specs.ram} RAM, ${deal.specs.cpu}, ${deal.specs.disk}${deal.specs.location ? `, ${deal.specs.location}` : ''}`,
+    description,
+    image: 'https://billing.luxvps.net/assets/img/logo.png',
+    sku: deal.id,
     brand: {
       '@type': 'Brand',
       name: 'LuxVPS',
@@ -136,6 +140,38 @@ export function buildProductSchema(deal: Deal) {
         '@type': 'Organization',
         name: 'LuxVPS',
         url: 'https://luxvps.net',
+      },
+      shippingDetails: {
+        '@type': 'OfferShippingDetails',
+        shippingRate: {
+          '@type': 'MonetaryAmount',
+          value: '0',
+          currency: 'EUR',
+        },
+        deliveryTime: {
+          '@type': 'ShippingDeliveryTime',
+          handlingTime: {
+            '@type': 'QuantitativeValue',
+            minValue: 0,
+            maxValue: 0,
+            unitCode: 'DAY',
+          },
+          transitTime: {
+            '@type': 'QuantitativeValue',
+            minValue: 0,
+            maxValue: 0,
+            unitCode: 'DAY',
+          },
+        },
+        shippingDestination: {
+          '@type': 'DefinedRegion',
+          addressCountry: 'DE',
+        },
+      },
+      hasMerchantReturnPolicy: {
+        '@type': 'MerchantReturnPolicy',
+        applicableCountry: 'DE',
+        returnPolicyCategory: 'https://schema.org/MerchantReturnNotPermitted',
       },
     },
   };
