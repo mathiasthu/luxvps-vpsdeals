@@ -83,14 +83,22 @@ Runbook:
 
 1. Push to GitHub from local.
 2. Root SSH terminal (`https://plesk.luxvps.net/modules/ssh-terminal/index.php`): `cd` to the app root, `git pull`.
-3. Build **as the subscription user**, never as root — either the Node.js panel's *Run script → build*, or from root:
-   `su - luxvps.xyz_bgbqbpflohp -s /bin/bash -c 'cd /var/www/vhosts/luxvps.xyz/deals.luxvps.net && npm run build'`
-4. *Restart App* in the Node.js panel (or `touch tmp/restart.txt`).
+3. **Give the pulled files back to the subscription user** — see the root-pull gotcha below. Skipping this makes step 4 fail with `EACCES … package-lock.json`:
+   ```
+   chown -R luxvps.xyz_bgbqbpflohp:psacln /var/www/vhosts/luxvps.xyz/deals.luxvps.net
+   chown luxvps.xyz_bgbqbpflohp:psaserv /var/www/vhosts/luxvps.xyz/deals.luxvps.net
+   chmod 750 /var/www/vhosts/luxvps.xyz/deals.luxvps.net
+   ```
+   Verify with `ls -ld` (`luxvps.xyz_bgbqbpflohp psaserv`, `drwxr-x---`) and `find … -user root` (empty).
+4. Build **as the subscription user**, never as root — either the Node.js panel's *Run script → build*, or from root:
+   `su - luxvps.xyz_bgbqbpflohp -s /bin/bash -c 'cd /var/www/vhosts/luxvps.xyz/deals.luxvps.net && npm install && npm run build'`
+5. *Restart App* in the Node.js panel (or `touch tmp/restart.txt`).
 
 ## Gotchas
 
 - **Two different SSH terminals.** The one opened from Websites & Domains runs as the subscription user; `/modules/ssh-terminal/index.php` runs as root. Root has no `npm` on its PATH (Plesk's Node lives under `/opt/plesk/node/`), and the subscription user can't write root-owned files — which terminal you're in decides which commands work.
 - **Ownership convention — this broke the site on 2026-08-01.** The document root *directory itself* must be `luxvps.xyz_bgbqbpflohp:psaserv` mode 750 (Apache is in `psaserv` and needs to traverse it); the files *inside* are group `psacln`. A recursive `chown -R ...:psacln` on the app root flattens that and Apache starts returning a **403 Forbidden** (Plesk's own error page, served through Cloudflare). Fix: `chown <user>:psaserv <docroot>` on that one directory, no `-R`. Compare against a working sibling domain with `ls -ld`. `plesk repair fs deals.luxvps.net` restores the conventions if more is off.
+- **`git pull` as root re-owns every file it writes** — hit again on 2026-08-01, this time as `EACCES: permission denied, open '…/package-lock.json'` during `npm install` (npm rewrites the lockfile even when nothing changes). The pull itself works; the *next* build breaks. Two options: run the pull through `su - luxvps.xyz_bgbqbpflohp -s /bin/bash -c '… git pull'` too, or keep pulling as root and run the two `chown` lines from step 3 afterwards, every time. `find <app root> -user root` (empty = clean) is the check.
 - App files were historically owned by `root` from an early deploy, which made every build fail with `EACCES … .next/trace`. Now corrected to the subscription user; keep it that way by never building as root.
 - Dependencies were cleaned up on 2026-08-01 — plain `npm install` and `npm ci` both work now, no `--legacy-peer-deps`. If that flag ever becomes necessary again, something has drifted; fix the conflict rather than papering over it with the flag.
 - Scraper category slugs (`epyc` etc.) must match the billing store URL path segments; order URLs come straight from the scraped page.
@@ -100,7 +108,7 @@ Runbook:
 
 ## Next steps
 
-- **The server still has April's `node_modules`.** The next deploy should run `npm install` (now that it works cleanly) before `npm run build`, as the subscription user, so the server picks up eslint 9 and the regenerated lockfile.
+- **The reseller API is still not configured on the server.** The 2026-08-01 SEO deploy built fine, but every worker logged `[stock] LUXVPS_API_BASE_URL / LUXVPS_API_TOKEN not set — falling back to scraped stock` even though Next reported loading `.env.local`. So those vars are absent from that file or named differently. Runtime may still be fine if they're set as Plesk *Custom environment variables* (pages re-render every 5 min), but until a build or runtime log shows `[stock] 24/24 packages resolved`, stock on the live site is the fixed WHMCS counter — i.e. everything reads "In Stock" forever. Check with `grep -c LUXVPS_API .env.local`.
 - `npm run lint` reports 1 error + 3 warnings: a `setState`-in-effect in `context/CurrencyContext.tsx:50` and three unused vars. None block the build.
 - **The reseller API integration has never run against the live endpoint** — it was verified
   end to end against a local mock (24/24 packages resolved; the two packets mocked
