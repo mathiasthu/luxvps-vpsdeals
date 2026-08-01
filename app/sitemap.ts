@@ -6,7 +6,8 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://deals.luxvps.net';
 export const revalidate = 86400;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const deals = await getAllDeals();
+  // No stock in a sitemap — skip the API call so this route keeps its 24h cadence.
+  const deals = await getAllDeals({ includeStock: false });
 
   const dealEntries: MetadataRoute.Sitemap = deals.map((deal) => ({
     url: `${SITE_URL}/deals/${deal.slug}`,

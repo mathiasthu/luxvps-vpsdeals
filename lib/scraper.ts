@@ -1,5 +1,6 @@
 import * as cheerio from 'cheerio';
 import { Deal, DealCategory, slugify, assignBadges } from './deals';
+import { getStockByStoreUrl, normalizeStoreUrl } from './stock';
 
 const SOURCES: { url: string; category: DealCategory }[] = [
   {
@@ -198,7 +199,8 @@ function scrapeProducts(html: string, category: DealCategory, sourcePageUrl: str
 
     const parsedSpecs = extractSpecsFromFeatures(features);
 
-    // Stock — LuxVPS uses <span class="qty">15 Available</span> or "0 Available"
+    // Stock fallback — the WHMCS store's own counter, <span class="qty">15 Available</span>.
+    // Only used when the reseller API didn't report on this package (see applyLiveStock).
     const qtyText = $el.find('span.qty').text().trim();
     const qtyNum = parseInt(qtyText, 10);
     const inStock = qtyText
@@ -257,7 +259,27 @@ async function fetchSource(url: string, category: DealCategory): Promise<Deal[]>
   }
 }
 
-export async function getAllDeals(): Promise<Deal[]> {
+/**
+ * Overlay live availability from the reseller API onto scraped deals.
+ *
+ * Packages the API didn't report on keep their scraped `inStock` — a line that fails to
+ * fetch must never read as a sell-out.
+ */
+async function applyLiveStock(deals: Deal[]): Promise<Deal[]> {
+  const stock = await getStockByStoreUrl();
+  if (stock.size === 0) return deals;
+
+  return deals.map((deal) => {
+    const live = stock.get(normalizeStoreUrl(deal.sourceUrl));
+    return live === undefined ? deal : { ...deal, inStock: live };
+  });
+}
+
+export async function getAllDeals(
+  options: { includeStock?: boolean } = {}
+): Promise<Deal[]> {
+  const { includeStock = true } = options;
+
   const results = await Promise.all(
     SOURCES.map(({ url, category }) => fetchSource(url, category))
   );
@@ -268,7 +290,7 @@ export async function getAllDeals(): Promise<Deal[]> {
     return [];
   }
 
-  return assignBadges(merged);
+  return assignBadges(includeStock ? await applyLiveStock(merged) : merged);
 }
 
 export async function getDealBySlug(slug: string): Promise<Deal | null> {

@@ -4,7 +4,9 @@ import HeroBanner from '@/components/HeroBanner';
 import DealGrid from '@/components/DealGrid';
 import type { Metadata } from 'next';
 
-export const revalidate = 86400; // 24h ISR
+// Stock comes from the reseller API (STOCK_REVALIDATE_SECONDS in lib/stock.ts); the
+// scraped catalog underneath is still cached for 24h.
+export const revalidate = 300;
 
 export const metadata: Metadata = buildHomeMetadata();
 

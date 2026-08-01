@@ -5,7 +5,9 @@ import { CATEGORY_LABELS, type DealCategory } from '@/lib/deals';
 import DealGrid from '@/components/DealGrid';
 import type { Metadata } from 'next';
 
-export const revalidate = 86400;
+// Stock comes from the reseller API (STOCK_REVALIDATE_SECONDS in lib/stock.ts); the
+// scraped catalog underneath is still cached for 24h.
+export const revalidate = 300;
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://deals.luxvps.net';
 

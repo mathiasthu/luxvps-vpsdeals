@@ -5,14 +5,16 @@ import { buildDealMetadata, buildProductSchema, buildBreadcrumbSchema, buildFaqS
 import { CATEGORY_LABELS, BADGE_LABELS, BADGE_COLORS, Deal } from '@/lib/deals';
 import type { Metadata } from 'next';
 
-export const revalidate = 86400;
+// Stock comes from the reseller API (STOCK_REVALIDATE_SECONDS in lib/stock.ts); the
+// scraped catalog underneath is still cached for 24h.
+export const revalidate = 300;
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
 export async function generateStaticParams() {
-  const deals = await getAllDeals();
+  const deals = await getAllDeals({ includeStock: false });
   return deals.map((d) => ({ slug: d.slug }));
 }
 
