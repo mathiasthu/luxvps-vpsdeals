@@ -55,6 +55,11 @@ function parsePrice(text: string): number | null {
   return isNaN(price) ? null : price;
 }
 
+// Every LuxVPS node sits in the same Frankfurt facility. The store pages rarely say so,
+// which left most deals with no location at all — used as both the fallback and the
+// normalized value for anything the pages do say about Germany/Frankfurt.
+export const DEFAULT_LOCATION = 'Frankfurt, Germany';
+
 function parseLocation(text: string): string | null {
   const m = text.match(/(?:Location|Datacenter|DC):\s*(.+)/i);
   if (m) return m[1].trim();
@@ -63,6 +68,13 @@ function parseLocation(text: string): string | null {
     if (text.includes(city)) return city;
   }
   return null;
+}
+
+function normalizeLocation(loc?: string): string {
+  if (!loc) return DEFAULT_LOCATION;
+  // "Germany", "Frankfurt", "DE" and friends all mean the same facility.
+  if (/frankfurt|germany|deutschland|\bDE\b/i.test(loc)) return DEFAULT_LOCATION;
+  return loc;
 }
 
 function extractSpecsFromFeatures(features: string[]): {
@@ -226,7 +238,7 @@ function scrapeProducts(html: string, category: DealCategory, sourcePageUrl: str
         cpu: parsedSpecs.cpu ?? 'N/A',
         disk: parsedSpecs.disk ?? 'N/A',
         bandwidth: parsedSpecs.bandwidth ?? 'N/A',
-        location: parsedSpecs.location,
+        location: normalizeLocation(parsedSpecs.location),
       },
       inStock,
       description,

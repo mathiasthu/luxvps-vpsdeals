@@ -1,8 +1,16 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getAllDeals, getDealBySlug } from '@/lib/scraper';
-import { buildDealMetadata, buildProductSchema, buildBreadcrumbSchema, buildFaqSchema } from '@/lib/seo';
+import {
+  buildDealMetadata,
+  buildProductSchema,
+  buildBreadcrumbSchema,
+  buildFaqSchema,
+  dealFaqEntries,
+  DATACENTER_LOCATION,
+} from '@/lib/seo';
 import { CATEGORY_LABELS, BADGE_LABELS, BADGE_COLORS, Deal } from '@/lib/deals';
+import FaqSection from '@/components/FaqSection';
 import type { Metadata } from 'next';
 
 // Stock comes from the reseller API (STOCK_REVALIDATE_SECONDS in lib/stock.ts); the
@@ -207,7 +215,8 @@ export default async function DealPage({ params }: PageProps) {
                   'NVMe SSD storage for blazing fast performance',
                   'Instant provisioning after order',
                   'Competitive pricing updated regularly',
-                  'German data centers — GDPR compliant',
+                  `Hosted in ${DATACENTER_LOCATION} — DE-CIX peering, low latency across Europe`,
+                  'German datacenter — GDPR compliant',
                 ].map((point) => (
                   <li key={point} className="flex items-start gap-2 text-sm text-brand-muted">
                     <svg className="w-4 h-4 text-brand-green flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
@@ -275,6 +284,13 @@ export default async function DealPage({ params }: PageProps) {
             </div>
           </div>
         </div>
+
+        {/* Visible FAQ — must exist for the FAQPage markup above to be eligible */}
+        <FaqSection
+          entries={dealFaqEntries(deal)}
+          heading={`${deal.name} — Frequently Asked Questions`}
+          className="!px-0 !max-w-none pb-4"
+        />
 
         {/* Related deals */}
         <RelatedDeals deals={relatedDeals} currentSlug={slug} />

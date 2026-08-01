@@ -1,8 +1,17 @@
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { getAllDeals } from '@/lib/scraper';
-import { buildCategoryMetadata, buildItemListSchema, buildBreadcrumbSchema } from '@/lib/seo';
+import {
+  buildCategoryMetadata,
+  buildItemListSchema,
+  buildBreadcrumbSchema,
+  buildCategoryFaqSchema,
+  categoryFaqEntries,
+  DATACENTER_LOCATION,
+} from '@/lib/seo';
 import { CATEGORY_LABELS, type DealCategory } from '@/lib/deals';
 import DealGrid from '@/components/DealGrid';
+import FaqSection from '@/components/FaqSection';
 import type { Metadata } from 'next';
 
 // Stock comes from the reseller API (STOCK_REVALIDATE_SECONDS in lib/stock.ts); the
@@ -13,16 +22,19 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://deals.luxvps.net';
 
 const CATEGORY_CONTENT: Record<DealCategory, { description: string; intro: string }> = {
   'kvm-rootserver': {
-    description: 'Cheap KVM root servers from LuxVPS. Full root access, KVM virtualization, SSD storage, and unmetered bandwidth from €4.99/month.',
-    intro: 'LuxVPS KVM root servers give you full root access with KVM virtualization. Perfect for hosting websites, game servers, or any workload that needs dedicated resources at an affordable price.',
+    description:
+      'Cheap KVM root servers from LuxVPS, hosted in Frankfurt, Germany. Full root access, KVM virtualization, SSD storage and unmetered bandwidth from €4.99/month.',
+    intro: `LuxVPS KVM root servers give you full root access with KVM virtualization, hosted in ${DATACENTER_LOCATION}. Perfect for hosting websites, game servers, or any workload that needs dedicated resources at an affordable price — with low-latency routing across Europe via DE-CIX.`,
   },
   'ryzen-kvm': {
-    description: 'AMD Ryzen KVM VPS servers from LuxVPS — powered by Ryzen 9 5900X CPUs with NVMe storage and unmetered bandwidth. Best performance per euro.',
-    intro: 'LuxVPS Ryzen KVM servers run on AMD Ryzen™ 9 5900X processors with fast NVMe storage in RAID 1. These offer the best raw CPU performance for the price — ideal for CPU-intensive workloads, game servers, and low-latency applications.',
+    description:
+      'AMD Ryzen KVM VPS servers from LuxVPS in Frankfurt, Germany — Ryzen 9 5900X CPUs with NVMe storage and unmetered bandwidth. Best performance per euro.',
+    intro: `LuxVPS Ryzen KVM servers run on AMD Ryzen™ 9 5900X processors with fast NVMe storage in RAID 1, hosted in ${DATACENTER_LOCATION}. These offer the best raw CPU performance for the price — ideal for CPU-intensive workloads, game servers, and low-latency applications across Europe.`,
   },
   'epyc': {
-    description: 'AMD EPYC KVM VPS servers from LuxVPS — server-grade EPYC CPUs with NVMe storage and unmetered bandwidth. Datacenter performance at VPS prices.',
-    intro: 'LuxVPS EPYC KVM servers run on server-grade AMD EPYC™ processors with fast NVMe storage. Built for sustained multi-core workloads — databases, virtualization, CI runners, and busy production apps — with full root access and KVM virtualization.',
+    description:
+      'AMD EPYC KVM VPS servers from LuxVPS in Frankfurt, Germany — server-grade EPYC CPUs with NVMe storage and unmetered bandwidth. Datacenter performance at VPS prices.',
+    intro: `LuxVPS EPYC KVM servers run on server-grade AMD EPYC™ processors with fast NVMe storage in ${DATACENTER_LOCATION}. Built for sustained multi-core workloads — databases, virtualization, CI runners, and busy production apps — with full root access and KVM virtualization.`,
   },
 };
 
@@ -67,16 +79,27 @@ export default async function CategoryPage({ params }: PageProps) {
 
   const itemListSchema = buildItemListSchema(deals);
 
+  const cheapest = deals
+    .filter((d) => d.price > 0)
+    .reduce<number | undefined>((min, d) => (min === undefined || d.price < min ? d.price : min), undefined);
+  const faqEntries = categoryFaqEntries(label, deals.length, cheapest);
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(buildCategoryFaqSchema(label, deals.length, cheapest)),
+        }}
+      />
 
       {/* Category hero */}
       <section className="border-b border-brand-border bg-brand-dark">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <nav className="flex items-center gap-2 text-sm text-brand-muted mb-4" aria-label="Breadcrumb">
-            <a href="/" className="hover:text-brand-text transition-colors">Home</a>
+            <Link href="/" className="hover:text-brand-text transition-colors">Home</Link>
             <svg className="w-3 h-3 text-brand-border" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
@@ -86,12 +109,17 @@ export default async function CategoryPage({ params }: PageProps) {
           <h1 className="text-3xl md:text-4xl font-extrabold text-white mb-3">
             {label}
             <span className="text-brand-red"> — LuxVPS</span>
+            <span className="block text-lg md:text-xl font-bold text-brand-text mt-2">
+              Hosted in {DATACENTER_LOCATION}
+            </span>
           </h1>
           <p className="text-brand-muted max-w-2xl text-base leading-relaxed mb-4">{intro}</p>
           <p className="text-brand-muted text-sm">
             <span className="text-brand-green font-semibold">{deals.length}</span> deal{deals.length !== 1 ? 's' : ''} available
             {' · '}
-            <span className="text-brand-muted">Prices in EUR · Updated every 24h</span>
+            <span className="text-brand-muted">
+              Prices in EUR · Updated every 24h · {DATACENTER_LOCATION}
+            </span>
           </p>
         </div>
       </section>
@@ -106,11 +134,13 @@ export default async function CategoryPage({ params }: PageProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
           <div className="text-4xl mb-4">⚠️</div>
           <h2 className="text-white font-bold text-xl mb-2">No deals available right now</h2>
-          <p className="text-brand-muted text-sm">Check back soon or <a href="/#deals" className="text-brand-red hover:underline">view all deals</a>.</p>
+          <p className="text-brand-muted text-sm">Check back soon or <Link href="/#deals" className="text-brand-red hover:underline">view all deals</Link>.</p>
         </div>
       ) : (
         <DealGrid deals={deals} />
       )}
+
+      <FaqSection entries={faqEntries} heading={`${label} — Frequently Asked Questions`} />
     </>
   );
 }

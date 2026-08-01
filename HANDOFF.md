@@ -10,6 +10,34 @@ Default branch is `claude/vps-deal-finder-seo-5Opgm` — there is no `main`.
 
 ## Current state
 
+- **2026-08-01: SEO pass + Frankfurt as the canonical location.** Every LuxVPS node is in
+  the same Frankfurt facility, but the store pages almost never say so, so most deals had
+  no location at all. `lib/scraper.ts` now exports `DEFAULT_LOCATION = 'Frankfurt, Germany'`
+  and `normalizeLocation()` — anything the pages say that means Germany/Frankfurt collapses
+  to that one string, and an unparsed location falls back to it. `lib/seo.ts` re-exports it
+  as `DATACENTER_LOCATION`/`DATACENTER_CITY` so copy, metadata and schema.org can't drift.
+  - Titles/descriptions rewritten around "VPS in Frankfurt, Germany" and trimmed toward
+    ~60 chars; keywords now target German/Frankfurt intent.
+  - **The FAQ markup was ineligible before** — deal pages emitted `FAQPage` JSON-LD with no
+    matching on-page text, which Google ignores. `components/FaqSection.tsx` now renders the
+    same entries the schema is built from (`dealFaqEntries` / `homeFaqEntries` /
+    `categoryFaqEntries` in `lib/seo.ts`). Keep those two fed from one source.
+  - Home and category pages gained visible FAQ blocks (with schema); home also has a
+    "Why a VPS in Frankfurt?" section — real crawlable copy on the location keyword.
+  - Product schema gained `additionalProperty` specs, a monthly `UnitPriceSpecification`,
+    and `availableAtOrFrom` pointing at the Frankfurt Place; `ItemList` entries carry
+    `sku`/`brand`; Organization/WebSite gained descriptions and a publisher.
+  - **Fixed a broken OG image**: home and category metadata pointed at `/og-image.png`,
+    which does not exist in `public/`. Removed those hardcoded paths and added
+    `app/opengraph-image.tsx` (generated, applies to every route except deal pages, which
+    keep their own). Satori is strict — any element with more than one child needs an
+    explicit `display`.
+  - Footer no longer says "Vibe coded"; it's just "Made with ❤️". The dead
+    `<link rel="alternate icon" href="/favicon.ico">` is gone (there is no such file), so
+    the console 404 on the homepage is gone too.
+  - Both `<a href="/">` internal links on the category page are now `<Link>` — that was the
+    2 lint errors listed under Next steps.
+
 - **2026-08-01: stock now comes from the reseller API, not the store pages.** The WHMCS
   `<span class="qty">` counter was a fixed number ("30 Available" on every EPYC tier), so
   everything read as in stock forever. Now `lib/stock.ts` polls the same reseller API
@@ -67,12 +95,13 @@ Runbook:
 - Dependencies were cleaned up on 2026-08-01 — plain `npm install` and `npm ci` both work now, no `--legacy-peer-deps`. If that flag ever becomes necessary again, something has drifted; fix the conflict rather than papering over it with the flag.
 - Scraper category slugs (`epyc` etc.) must match the billing store URL path segments; order URLs come straight from the scraped page.
 - Cloudflare sits in front of the origin — hard-refresh when verifying, and don't mistake an origin error for a CDN one (`cf-cache-status: DYNAMIC` plus a Plesk error page means it came from the origin).
-- No `public/favicon.ico`, so the site 404s on it. Cosmetic, pre-existing.
+- No `public/favicon.ico`. The `<link>` referencing it was removed, but browsers still probe `/favicon.ico` on their own, so a 404 for it in the network log is expected. `favicon.svg` covers every current browser.
+- FAQ copy lives in `lib/seo.ts` (`dealFaqEntries` / `homeFaqEntries` / `categoryFaqEntries`) and is rendered by `components/FaqSection.tsx`. Changing one without the other silently kills the rich result — the markup must match visible text.
 
 ## Next steps
 
 - **The server still has April's `node_modules`.** The next deploy should run `npm install` (now that it works cleanly) before `npm run build`, as the subscription user, so the server picks up eslint 9 and the regenerated lockfile.
-- `npm run lint` works again and currently reports 3 errors + 3 warnings, all pre-existing: two `<a>`-instead-of-`<Link>` in `app/category/[cat]/page.tsx`, a `setState`-in-effect in `context/CurrencyContext.tsx:50`, and three unused vars. None block the build.
+- `npm run lint` reports 1 error + 3 warnings: a `setState`-in-effect in `context/CurrencyContext.tsx:50` and three unused vars. None block the build.
 - **The reseller API integration has never run against the live endpoint** — it was verified
   end to end against a local mock (24/24 packages resolved; the two packets mocked
   `active: 0` rendered "Out of Stock" and `schema.org/OutOfStock`). On the first real

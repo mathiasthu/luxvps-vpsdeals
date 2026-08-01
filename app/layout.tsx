@@ -15,7 +15,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <head>
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <link rel="alternate icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/favicon.svg" />
         <link rel="preconnect" href="https://billing.luxvps.net" />
         <meta name="theme-color" content="#E63946" />
@@ -75,7 +74,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <span className="text-brand-muted ml-1 font-normal text-sm">Deal Finder</span>
                   </div>
                   <p className="text-brand-muted text-sm max-w-sm">
-                    Aggregating the best VPS deals from LuxVPS — Xeon, Ryzen, and EPYC KVM servers updated daily.
+                    Aggregating the best VPS deals from LuxVPS — Xeon, Ryzen, and EPYC KVM servers
+                    hosted in Frankfurt, Germany, updated daily.
                   </p>
                 </div>
 
@@ -115,7 +115,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                       billing.luxvps.net
                     </a>
                   </p>
-                  <p>Vibe coded ⚡ &amp; made with ❤️</p>
+                  <p>Made with ❤️</p>
                 </div>
               </div>
             </div>

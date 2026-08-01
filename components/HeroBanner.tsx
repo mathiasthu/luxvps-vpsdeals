@@ -34,10 +34,14 @@ export default function HeroBanner({ deals, totalDeals }: HeroBannerProps) {
               LuxVPS{' '}
               <span className="text-brand-red">Deal</span>{' '}
               <span className="text-brand-yellow">Finder</span>
+              <span className="block text-xl md:text-2xl font-bold text-brand-text mt-3">
+                Cheap KVM, Ryzen &amp; EPYC VPS deals in Frankfurt, Germany
+              </span>
             </h1>
 
             <p className="text-brand-muted text-lg md:text-xl max-w-xl mb-8 leading-relaxed">
-              Cheap Xeon, Ryzen & EPYC KVM servers at unbeatable prices. Compare plans, filter by specs, and grab the best deal instantly.
+              Every LuxVPS plan in one place, hosted in Frankfurt. Compare Xeon, Ryzen and EPYC KVM
+              servers, filter by specs, and grab the best deal instantly.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
@@ -119,6 +123,11 @@ export default function HeroBanner({ deals, totalDeals }: HeroBannerProps) {
           <div className="flex items-center gap-2">
             <span className="text-brand-red font-bold text-lg">KVM</span>
             Full Root Access
+          </div>
+          <div className="w-px h-5 bg-brand-border hidden sm:block" />
+          <div className="flex items-center gap-2">
+            <span className="text-brand-text font-bold text-lg">🇩🇪</span>
+            Frankfurt, Germany
           </div>
         </div>
       </div>
