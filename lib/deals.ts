@@ -63,7 +63,7 @@ export function assignBadges(deals: Deal[]): Deal[] {
   }
 
   const result: Deal[] = [];
-  for (const [category, categoryDeals] of byCategory) {
+  for (const categoryDeals of byCategory.values()) {
     const sorted = [...categoryDeals].sort((a, b) => a.price - b.price);
     const withBadges = categoryDeals.map((deal) => {
       let badge: DealBadge | undefined = deal.badge;
