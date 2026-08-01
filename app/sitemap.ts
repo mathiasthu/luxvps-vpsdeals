@@ -16,9 +16,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   const categoryEntries: MetadataRoute.Sitemap = [
-    'special-offer',
-    'ryzen-kvm',
     'kvm-rootserver',
+    'ryzen-kvm',
+    'epyc',
   ].map((cat) => ({
     url: `${SITE_URL}/category/${cat}`,
     lastModified: new Date(),

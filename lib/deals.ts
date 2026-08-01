@@ -1,5 +1,5 @@
-export type DealCategory = 'special-offer' | 'kvm-rootserver' | 'ryzen-kvm';
-export type DealBadge = 'hot-deal' | 'best-value' | 'special';
+export type DealCategory = 'kvm-rootserver' | 'ryzen-kvm' | 'epyc';
+export type DealBadge = 'hot-deal' | 'best-value';
 
 export interface DealSpecs {
   ram: string;
@@ -25,27 +25,25 @@ export interface Deal {
 }
 
 export const CATEGORY_LABELS: Record<DealCategory, string> = {
-  'special-offer': 'Special Offers',
   'kvm-rootserver': 'KVM Root Servers',
   'ryzen-kvm': 'Ryzen KVM',
+  'epyc': 'EPYC KVM',
 };
 
 export const BADGE_LABELS: Record<DealBadge, string> = {
   'hot-deal': 'Hot Deal',
   'best-value': 'Best Value',
-  'special': 'Special',
 };
 
 export const BADGE_COLORS: Record<DealBadge, string> = {
   'hot-deal': 'bg-brand-yellow text-brand-dark',
   'best-value': 'bg-brand-green text-brand-dark',
-  'special': 'bg-brand-red text-white',
 };
 
 export const CATEGORY_BORDER_COLORS: Record<DealCategory, string> = {
-  'special-offer': 'border-l-brand-red',
   'kvm-rootserver': 'border-l-brand-yellow',
   'ryzen-kvm': 'border-l-brand-green',
+  'epyc': 'border-l-brand-red',
 };
 
 export function slugify(text: string): string {
@@ -69,9 +67,7 @@ export function assignBadges(deals: Deal[]): Deal[] {
     const sorted = [...categoryDeals].sort((a, b) => a.price - b.price);
     const withBadges = categoryDeals.map((deal) => {
       let badge: DealBadge | undefined = deal.badge;
-      if (category === 'special-offer') {
-        badge = 'special';
-      } else if (sorted[0]?.id === deal.id) {
+      if (sorted[0]?.id === deal.id) {
         badge = 'best-value';
       } else if (sorted.length > 1 && sorted[1]?.id === deal.id) {
         badge = 'hot-deal';

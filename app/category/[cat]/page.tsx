@@ -10,10 +10,6 @@ export const revalidate = 86400;
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://deals.luxvps.net';
 
 const CATEGORY_CONTENT: Record<DealCategory, { description: string; intro: string }> = {
-  'special-offer': {
-    description: 'Exclusive LuxVPS special offers — limited time KVM VPS and root server deals at heavily discounted prices. Grab them before they\'re gone.',
-    intro: 'These are time-limited special offers on LuxVPS KVM and Ryzen VPS servers. Stock is limited — all plans include full root access, KVM virtualization, and are hosted in German datacenters with 3.2Tbit DDoS protection.',
-  },
   'kvm-rootserver': {
     description: 'Cheap KVM root servers from LuxVPS. Full root access, KVM virtualization, SSD storage, and unmetered bandwidth from €4.99/month.',
     intro: 'LuxVPS KVM root servers give you full root access with KVM virtualization. Perfect for hosting websites, game servers, or any workload that needs dedicated resources at an affordable price.',
@@ -22,12 +18,16 @@ const CATEGORY_CONTENT: Record<DealCategory, { description: string; intro: strin
     description: 'AMD Ryzen KVM VPS servers from LuxVPS — powered by Ryzen 9 5900X CPUs with NVMe storage and unmetered bandwidth. Best performance per euro.',
     intro: 'LuxVPS Ryzen KVM servers run on AMD Ryzen™ 9 5900X processors with fast NVMe storage in RAID 1. These offer the best raw CPU performance for the price — ideal for CPU-intensive workloads, game servers, and low-latency applications.',
   },
+  'epyc': {
+    description: 'AMD EPYC KVM VPS servers from LuxVPS — server-grade EPYC CPUs with NVMe storage and unmetered bandwidth. Datacenter performance at VPS prices.',
+    intro: 'LuxVPS EPYC KVM servers run on server-grade AMD EPYC™ processors with fast NVMe storage. Built for sustained multi-core workloads — databases, virtualization, CI runners, and busy production apps — with full root access and KVM virtualization.',
+  },
 };
 
 type ValidCategory = DealCategory;
 
 function isValidCategory(cat: string): cat is ValidCategory {
-  return ['special-offer', 'kvm-rootserver', 'ryzen-kvm'].includes(cat);
+  return ['kvm-rootserver', 'ryzen-kvm', 'epyc'].includes(cat);
 }
 
 interface PageProps {
@@ -36,9 +36,9 @@ interface PageProps {
 
 export async function generateStaticParams() {
   return [
-    { cat: 'special-offer' },
     { cat: 'kvm-rootserver' },
     { cat: 'ryzen-kvm' },
+    { cat: 'epyc' },
   ];
 }
 

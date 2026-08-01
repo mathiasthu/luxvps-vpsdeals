@@ -23,7 +23,9 @@ export default async function HomePage() {
     );
   }
 
-  const specialDeals = deals.filter((d) => d.category === 'special-offer');
+  const featuredDeals = [...deals]
+    .filter((d) => d.inStock && d.price > 0)
+    .sort((a, b) => a.price - b.price);
 
   return (
     <>
@@ -38,15 +40,15 @@ export default async function HomePage() {
       />
 
       {/* Hero */}
-      <HeroBanner specialDeals={specialDeals} />
+      <HeroBanner deals={featuredDeals} totalDeals={deals.length} />
 
       {/* SEO intro text */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-2">
         <h2 className="text-2xl font-bold text-white mb-2">
-          Best LuxVPS Deals — KVM & Ryzen VPS at Unbeatable Prices
+          Best LuxVPS Deals — KVM, Ryzen & EPYC VPS at Unbeatable Prices
         </h2>
         <p className="text-brand-muted text-sm max-w-2xl">
-          Browse {deals.length}+ VPS deals from LuxVPS including KVM root servers, Ryzen KVM VPS, and exclusive special offers. Filter by RAM, location, or price — and compare plans side by side before you order.
+          Browse {deals.length}+ VPS deals from LuxVPS including KVM root servers, Ryzen KVM VPS, and EPYC KVM servers. Filter by RAM, location, or price — and compare plans side by side before you order.
         </p>
       </section>
 

@@ -5,9 +5,9 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://deals.luxvps.net';
 const SITE_NAME = 'LuxVPS Deal Finder';
 
 export function buildHomeMetadata(): Metadata {
-  const title = 'LuxVPS Deal Finder — Cheap KVM & Ryzen VPS Deals | Best Prices 2026';
+  const title = 'LuxVPS Deal Finder — Cheap KVM, Ryzen & EPYC VPS Deals | Best Prices 2026';
   const description =
-    'Find the best LuxVPS deals. Cheap KVM VPS, Ryzen VPS servers and root servers at unbeatable prices. Compare plans, filter by specs, order instantly.';
+    'Find the best LuxVPS deals. Cheap KVM VPS, Ryzen and EPYC servers at unbeatable prices. Compare plans, filter by specs, order instantly.';
 
   return {
     title,
@@ -23,7 +23,7 @@ export function buildHomeMetadata(): Metadata {
       'LuxVPS offers',
       'KVM root server',
       'buy LuxVPS',
-      'VPS special offers',
+      'EPYC VPS',
       'cheap root server',
     ],
     alternates: {
@@ -77,7 +77,7 @@ export function buildDealMetadata(deal: Deal): Metadata {
       'LuxVPS',
       'LuxVPS deal',
       `${deal.specs.ram} VPS`,
-      `${deal.category === 'ryzen-kvm' ? 'Ryzen KVM VPS' : deal.category === 'kvm-rootserver' ? 'KVM root server' : 'VPS special offer'}`,
+      `${deal.category === 'ryzen-kvm' ? 'Ryzen KVM VPS' : deal.category === 'kvm-rootserver' ? 'KVM root server' : 'EPYC KVM VPS'}`,
       'cheap VPS',
       'buy VPS',
       `€${deal.price} VPS`,
@@ -182,7 +182,7 @@ export function buildItemListSchema(deals: Deal[]) {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
     name: 'LuxVPS VPS Deals',
-    description: 'The best LuxVPS VPS deals — KVM, Ryzen, and special offers',
+    description: 'The best LuxVPS VPS deals — Xeon, Ryzen, and EPYC KVM servers',
     numberOfItems: deals.length,
     itemListElement: deals.map((deal, i) => ({
       '@type': 'ListItem',
@@ -224,7 +224,7 @@ export function buildWebsiteSchema() {
     name: SITE_NAME,
     url: SITE_URL,
     description:
-      'Find the best LuxVPS VPS deals — KVM, Ryzen, and special offers at unbeatable prices.',
+      'Find the best LuxVPS VPS deals — Xeon, Ryzen, and EPYC KVM servers at unbeatable prices.',
     potentialAction: {
       '@type': 'SearchAction',
       target: `${SITE_URL}/?q={search_term_string}`,

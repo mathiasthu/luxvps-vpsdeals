@@ -59,8 +59,8 @@ export default async function Image({ params }: Props) {
             <div
               style={{
                 marginLeft: 'auto',
-                background: deal.badge === 'best-value' ? '#06D6A0' : deal.badge === 'special' ? '#E63946' : '#FFD60A',
-                color: deal.badge === 'special' ? '#ffffff' : '#0D1117',
+                background: deal.badge === 'best-value' ? '#06D6A0' : '#FFD60A',
+                color: '#0D1117',
                 fontSize: 14,
                 fontWeight: 800,
                 padding: '6px 16px',
@@ -69,7 +69,7 @@ export default async function Image({ params }: Props) {
                 letterSpacing: 1,
               }}
             >
-              {deal.badge === 'best-value' ? 'Best Value' : deal.badge === 'special' ? 'Special Offer' : 'Hot Deal'}
+              {deal.badge === 'best-value' ? 'Best Value' : 'Hot Deal'}
             </div>
           )}
         </div>

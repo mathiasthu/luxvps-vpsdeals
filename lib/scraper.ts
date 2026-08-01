@@ -3,16 +3,16 @@ import { Deal, DealCategory, slugify, assignBadges } from './deals';
 
 const SOURCES: { url: string; category: DealCategory }[] = [
   {
-    url: 'https://billing.luxvps.net/index.php?rp=/store/special-offer',
-    category: 'special-offer',
-  },
-  {
     url: 'https://billing.luxvps.net/index.php?rp=/store/kvm-rootservers',
     category: 'kvm-rootserver',
   },
   {
     url: 'https://billing.luxvps.net/index.php?rp=/store/ryzen-kvmservers',
     category: 'ryzen-kvm',
+  },
+  {
+    url: 'https://billing.luxvps.net/index.php?rp=/store/epyc',
+    category: 'epyc',
   },
 ];
 

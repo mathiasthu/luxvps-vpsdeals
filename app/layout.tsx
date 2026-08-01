@@ -44,14 +44,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <Link href="/#deals" className="hover:text-brand-text transition-colors">
                   All Deals
                 </Link>
-                <Link href="/category/special-offer" className="hover:text-brand-text transition-colors">
-                  Special Offers
+                <Link href="/category/kvm-rootserver" className="hover:text-brand-text transition-colors">
+                  Root Servers
                 </Link>
                 <Link href="/category/ryzen-kvm" className="hover:text-brand-text transition-colors">
                   Ryzen KVM
                 </Link>
-                <Link href="/category/kvm-rootserver" className="hover:text-brand-text transition-colors">
-                  Root Servers
+                <Link href="/category/epyc" className="hover:text-brand-text transition-colors">
+                  EPYC KVM
                 </Link>
               </nav>
 
@@ -75,7 +75,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <span className="text-brand-muted ml-1 font-normal text-sm">Deal Finder</span>
                   </div>
                   <p className="text-brand-muted text-sm max-w-sm">
-                    Aggregating the best VPS deals from LuxVPS — KVM, Ryzen, and special offers updated daily.
+                    Aggregating the best VPS deals from LuxVPS — Xeon, Ryzen, and EPYC KVM servers updated daily.
                   </p>
                 </div>
 
@@ -83,9 +83,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <div>
                     <div className="text-brand-text font-semibold mb-2">Deals</div>
                     <ul className="space-y-1.5">
-                      <li><Link href="/category/special-offer" className="hover:text-brand-text transition-colors">Special Offers</Link></li>
-                      <li><Link href="/category/ryzen-kvm" className="hover:text-brand-text transition-colors">Ryzen KVM VPS</Link></li>
                       <li><Link href="/category/kvm-rootserver" className="hover:text-brand-text transition-colors">KVM Root Servers</Link></li>
+                      <li><Link href="/category/ryzen-kvm" className="hover:text-brand-text transition-colors">Ryzen KVM VPS</Link></li>
+                      <li><Link href="/category/epyc" className="hover:text-brand-text transition-colors">EPYC KVM VPS</Link></li>
                     </ul>
                   </div>
                   <div>

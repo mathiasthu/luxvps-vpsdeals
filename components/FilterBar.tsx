@@ -31,9 +31,9 @@ const RAM_OPTIONS = [0, 1, 2, 4, 8, 16, 32];
 
 const CATEGORIES: { value: DealCategory | 'all'; label: string }[] = [
   { value: 'all', label: 'All Deals' },
-  { value: 'special-offer', label: CATEGORY_LABELS['special-offer'] },
   { value: 'kvm-rootserver', label: CATEGORY_LABELS['kvm-rootserver'] },
   { value: 'ryzen-kvm', label: CATEGORY_LABELS['ryzen-kvm'] },
+  { value: 'epyc', label: CATEGORY_LABELS['epyc'] },
 ];
 
 export default function FilterBar({ filters, onChange, locations, dealCount }: FilterBarProps) {

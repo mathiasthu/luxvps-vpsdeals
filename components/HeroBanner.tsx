@@ -5,12 +5,13 @@ import { Deal } from '@/lib/deals';
 import { useCurrency } from '@/context/CurrencyContext';
 
 interface HeroBannerProps {
-  specialDeals: Deal[];
+  deals: Deal[];
+  totalDeals: number;
 }
 
-export default function HeroBanner({ specialDeals }: HeroBannerProps) {
+export default function HeroBanner({ deals, totalDeals }: HeroBannerProps) {
   const { formatPrice } = useCurrency();
-  const topDeal = specialDeals[0];
+  const topDeal = deals[0];
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-brand-dark via-[#1a0408] to-brand-dark border-b border-brand-border">
@@ -26,7 +27,7 @@ export default function HeroBanner({ specialDeals }: HeroBannerProps) {
           <div className="flex-1 text-center md:text-left">
             <div className="inline-flex items-center gap-2 bg-brand-red/20 border border-brand-red/40 text-brand-red text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-full mb-4">
               <span className="w-1.5 h-1.5 bg-brand-red rounded-full animate-pulse" />
-              Limited Time Deals
+              Prices Updated Daily
             </div>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-4">
@@ -36,7 +37,7 @@ export default function HeroBanner({ specialDeals }: HeroBannerProps) {
             </h1>
 
             <p className="text-brand-muted text-lg md:text-xl max-w-xl mb-8 leading-relaxed">
-              Cheap KVM & Ryzen VPS servers at unbeatable prices. Compare plans, filter by specs, and grab the best deal instantly.
+              Cheap Xeon, Ryzen & EPYC KVM servers at unbeatable prices. Compare plans, filter by specs, and grab the best deal instantly.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
@@ -64,7 +65,7 @@ export default function HeroBanner({ specialDeals }: HeroBannerProps) {
               <div className="relative bg-brand-card border-2 border-brand-red/60 rounded-2xl p-6 shadow-2xl shadow-brand-red/20">
                 <div className="absolute -top-3 left-4">
                   <span className="bg-brand-red text-white text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full">
-                    🔥 Special Offer
+                    🔥 Best Value
                   </span>
                 </div>
 
@@ -106,8 +107,8 @@ export default function HeroBanner({ specialDeals }: HeroBannerProps) {
         {/* Stats bar */}
         <div className="mt-12 flex flex-wrap justify-center md:justify-start gap-6 text-sm text-brand-muted">
           <div className="flex items-center gap-2">
-            <span className="text-brand-green font-bold text-lg">{specialDeals.length}+</span>
-            Special Offers
+            <span className="text-brand-green font-bold text-lg">{totalDeals}+</span>
+            Live Deals
           </div>
           <div className="w-px h-5 bg-brand-border hidden sm:block" />
           <div className="flex items-center gap-2">
